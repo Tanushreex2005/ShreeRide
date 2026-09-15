@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Driver Login — ShreeRide{% endblock %}
+{% block content %}
+<section class="auth-scene">
+    <div class="road-lines"></div>
+    <div class="auth-card">
+        <div class="auth-top">
+            <a class="brand" href="{{ url_for('index') }}"><span class="brand-word">Shree<i>Ride</i></span></a>
+            <span class="admin-badge">DRIVER</span>
+        </div>
+        <div class="auth-heading">
+            <div class="eyebrow">DRIVER PORTAL</div>
+            <h1>Driver login</h1>
+            <p>Sign in to review paid ride requests assigned to you.</p>
+        </div>
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="field"><label>Phone number</label><input type="tel" name="phone" placeholder="9876543210" required></div>
+            <div class="field"><label>Password</label><input type="password" name="password" placeholder="driver123" required></div>
+            <button class="btn btn-primary btn-block" type="submit">Enter Driver Portal →</button>
+        </form>
+        <div class="auth-switch">Demo password: <strong>driver123</strong></div>
+    </div>
+</section>
+{% endblock %}

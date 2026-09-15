@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Cars — ShreeRide{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">ShreeRide FLEET</div>
+            <h1>Choose your car.</h1>
+            <p>Reserve your preferred vehicle for a future date and time. Cars can be booked from tomorrow up to 2 months ahead.</p>
+        </div>
+
+        <div class="filter-bar">
+            {% for item in ["All","Sedan","SUV","Hatchback","Luxury","Electric","MPV"] %}
+                <a class="{% if category == item %}active{% endif %}"
+                   href="{{ url_for('cars', category=item, q=search_query, seats=min_seats, max_price=max_price, pickup_date=pickup_date, pickup_time=pickup_time, duration=duration) }}">{{ item }}</a>
+            {% endfor %}
+        </div>
+
+        <form class="search-panel" method="GET" action="{{ url_for('cars') }}">
+            <input type="hidden" name="category" value="{{ category }}">
+            <div class="search-grid">
+                <div class="field">
+                    <label>Search car / brand</label>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="e.g. Creta, Honda, Swift">
+                </div>
+                <div class="field">
+                    <label>Min seats</label>
+                    <select name="seats">
+                        <option value="">Any</option>
+                        {% for s in [4,5,6,7,8] %}
+                            <option value="{{ s }}" {% if min_seats == s|string %}selected{% endif %}>{{ s }}+ seats</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Max price / day (₹)</label>
+                    <input type="number" name="max_price" min="1" step="1" value="{{ max_price }}" placeholder="e.g. 2500">
+                </div>
+            </div>
+            <div class="search-grid search-grid-dates">
+                <div class="field">
+                    <label>Pickup date (optional)</label>
+                    <input type="date" name="pickup_date" value="{{ pickup_date }}" min="{{ min_pickup_date }}" max="{{ max_pickup_date }}">
+                </div>
+                <div class="field">
+                    <label>Pickup time</label>
+                    <input type="time" name="pickup_time" value="{{ pickup_time }}">
+                </div>
+                <div class="field">
+                    <label>Duration (days)</label>
+                    <select name="duration">
+                        {% for n in range(1, 31) %}
+                            <option value="{{ n }}" {% if duration == n|string %}selected{% endif %}>{{ n }} day{% if n > 1 %}s{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="search-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Search & check availability</button>
+                <a class="btn btn-outline btn-sm" href="{{ url_for('cars', category=category) }}">Clear</a>
+            </div>
+            {% if availability_error %}
+                <div class="search-alert search-alert-error">{{ availability_error }}</div>
+            {% elif availability_summary %}
+                <div class="search-alert search-alert-ok">{{ availability_summary }}</div>
+            {% endif %}
+        </form>
+
+        <div class="result-count">{{ cars|length }} car{% if cars|length != 1 %}s{% endif %} found</div>
+
+        <div class="car-grid">
+        {% for car in cars %}
+            <article class="car-card">
+                <div class="car-image" style="background-image:url('{{ car.image_url }}')">
+                    <span>{{ car.category }}</span>
+                </div>
+                <div class="car-body">
+                    <small>{{ car.brand }}</small>
+                    <h3>{{ car.name }}</h3>
+                    <div class="specs">
+                        <span>{{ car.seats }} Seats</span>
+                        <span>AC</span>
+                        <span>Automatic</span>
+                    </div>
+                    <p>Comfortable scheduled rental for planned journeys.</p>
+                    <div class="car-footer">
+                        <strong>₹{{ "%.0f"|format(car.price_per_day) }}<small>/day</small></strong>
+                        <a class="btn btn-primary btn-sm" href="{{ url_for('book', car_id=car.id) }}{% if pickup_date %}?pickup_date={{ pickup_date }}&pickup_time={{ pickup_time }}&duration={{ duration }}{% endif %}">Reserve</a>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="empty-state">No cars match this search. Try clearing the date or filters.</div>
+        {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

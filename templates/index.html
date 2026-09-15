@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}ShreeRide — Advance Car Booking{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container hero-grid">
+        <div>
+            <div class="eyebrow">SELF-DRIVE • ADVANCE RESERVATION</div>
+            <h1>Reserve your ride.<br><span>Own the road.</span></h1>
+            <p class="hero-text">
+                ShreeRide lets you reserve a car in advance for a planned date,
+                choose your duration and receive a booking invoice with driver
+                assignment from the admin.
+            </p>
+
+            <div class="hero-actions">
+                {% if session.get('user_id') %}
+                    <a class="btn btn-primary btn-shine" href="{{ url_for('cars') }}">Explore Cars →</a>
+                    <a class="btn btn-outline" href="{{ url_for('my_bookings') }}">My Bookings</a>
+                {% else %}
+                    <a class="btn btn-primary btn-shine" href="{{ url_for('signup') }}">Get Started →</a>
+                    <a class="btn btn-outline" href="{{ url_for('login') }}">I already have an account</a>
+                {% endif %}
+            </div>
+            <p class="hero-microcopy">No hidden charges • Free cancellation before 24 hrs • Driver confirmed after acceptance</p>
+
+            <div class="trust-row">
+                <div><b>24/7</b><small>Booking access</small></div>
+                <div><b>12</b><small>Cars & variants</small></div>
+                <div><b>100%</b><small>Digital invoice</small></div>
+            </div>
+        </div>
+
+        <div class="hero-car">
+            <div class="night-scene" id="nightScene">
+                <div class="ns-moon"></div>
+                <div class="ns-stars" id="nsStars"></div>
+                <div class="ns-skyline ns-back" id="nsSkylineBack"></div>
+                <div class="ns-skyline ns-front" id="nsSkylineFront"></div>
+                <div class="ns-road"><div class="ns-lane"></div></div>
+                <div class="ns-car">
+                    <div class="ns-beam"></div>
+                    <svg width="150" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 40 Q18 18 46 16 L120 16 Q142 16 150 34 L166 36 Q172 37 172 42 L172 46 Q172 50 168 50 L14 50 Q10 50 10 46 Z" fill="#e85d3d"/>
+                        <path d="M46 18 Q60 8 84 8 L112 8 Q128 8 134 18 L134 24 L46 24 Z" fill="#1e2126" opacity="0.9"/>
+                        <circle cx="42" cy="50" r="10" fill="#14161a" stroke="#33373f" stroke-width="2"/>
+                        <circle cx="140" cy="50" r="10" fill="#14161a" stroke="#33373f" stroke-width="2"/>
+                        <circle cx="169" cy="41" r="4" fill="#ffe6b0"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="hud-line"></div>
+            <div class="hero-car-label">ShreeRide / RESERVATION SYSTEM</div>
+            <div class="hero-car-name">YOUR NEXT<br>DRIVE AWAITS.</div>
+        </div>
+    </div>
+</section>
+
+<style>
+  /* Scoped to index.html only — does not touch static/style.css */
+  .night-scene{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .hud-line{z-index:2}
+  .hero-car-name{z-index:2}
+  .hero-car-label{position:relative;z-index:2}
+
+  .ns-moon{
+    position:absolute;top:10%;right:10%;width:44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #fff8e0, var(--amber) 60%, var(--amber-dim) 100%);
+    box-shadow:0 0 30px 10px rgba(255,176,32,.25);
+    animation:nsGlow 6s ease-in-out infinite;
+  }
+  @keyframes nsGlow{0%,100%{box-shadow:0 0 30px 10px rgba(255,176,32,.25)}50%{box-shadow:0 0 42px 16px rgba(255,176,32,.35)}}
+
+  .ns-stars{position:absolute;inset:0}
+  .ns-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:.6;animation:nsTwinkle linear infinite}
+  @keyframes nsTwinkle{0%,100%{opacity:.12}50%{opacity:.9}}
+
+  .ns-skyline{position:absolute;bottom:60px;left:0;width:200%;height:90px;animation:nsDrift 55s linear infinite}
+  .ns-skyline.ns-back{opacity:.3;bottom:58px;animation-duration:85s}
+  .ns-skyline svg{height:90px;display:block}
+  @keyframes nsDrift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  .ns-road{position:absolute;bottom:0;left:0;width:100%;height:52px;background:linear-gradient(180deg,#181a1f,#0e0f12);border-top:2px solid #2b2e35}
+  .ns-lane{position:absolute;bottom:24px;left:0;width:200%;height:4px;background-image:repeating-linear-gradient(90deg,var(--amber-dim) 0 26px,transparent 26px 58px);animation:nsLane .8s linear infinite;opacity:.75}
+  @keyframes nsLane{from{transform:translateX(0)}to{transform:translateX(-84px)}}
+
+  .ns-car{position:absolute;bottom:30px;left:22%;animation:nsBob 1.3s ease-in-out infinite}
+  @keyframes nsBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+  .ns-beam{
+    position:absolute;left:2px;bottom:8px;width:220px;height:70px;
+    background:linear-gradient(180deg,rgba(255,214,140,.28),rgba(255,214,140,0) 80%);
+    clip-path:polygon(0% 0%, 12% 0%, 100% 90%, 0% 100%);
+    filter:blur(1px);animation:nsFlicker 3s ease-in-out infinite;
+  }
+  @keyframes nsFlicker{0%,100%{opacity:.85}49%{opacity:.85}50%{opacity:.55}51%{opacity:.85}}
+
+  @media (max-width:720px){ .night-scene{opacity:.7} }
+</style>
+<script>
+  (function(){
+    var starsBox = document.getElementById('nsStars');
+    if(!starsBox) return;
+    for(var i=0;i<40;i++){
+      var s=document.createElement('div');
+      s.className='ns-star';
+      s.style.left=(Math.random()*100)+'%';
+      s.style.top=(Math.random()*70)+'%';
+      var sz=Math.random()*1.5+1;
+      s.style.width=sz+'px'; s.style.height=sz+'px';
+      s.style.animationDuration=(2+Math.random()*4)+'s';
+      s.style.animationDelay=(Math.random()*4)+'s';
+      starsBox.appendChild(s);
+    }
+    function buildings(seed,color){
+      var x=0,out='',s=seed;
+      function rnd(a,b){ s=(s*9301+49297)%233280; return a+(s/233280)*(b-a); }
+      while(x<1600){
+        var w=rnd(24,55), h=rnd(24,85);
+        out+='<rect x="'+x+'" y="'+(90-h)+'" width="'+w+'" height="'+h+'" fill="'+color+'"/>';
+        if(rnd(0,1)>0.55){ out+='<rect x="'+(x+w*0.3)+'" y="'+(90-h+8)+'" width="3" height="4" fill="#ffb020" opacity="0.6"/>'; }
+        x+=w+rnd(5,14);
+      }
+      return '<svg viewBox="0 0 1600 90" preserveAspectRatio="none">'+out+'</svg>';
+    }
+    var back=document.getElementById('nsSkylineBack');
+    var front=document.getElementById('nsSkylineFront');
+    if(back) back.innerHTML=buildings(7,'#1a1d24');
+    if(front) front.innerHTML=buildings(42,'#20232a');
+  })();
+</script>
+
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">HOW IT WORKS</div>
+            <h2>Book ahead. Drive without the rush.</h2>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="feature-number">01</span>
+                <h3>Create account</h3>
+                <p>New users sign up with their name, email and phone number.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-number">02</span>
+                <h3>Select a car</h3>
+                <p>Browse available cars and select the one that fits your plan.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-number">03</span>
+                <h3>Reserve in advance</h3>
+                <p>Choose your future pickup date, time, duration and return location.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-number">04</span>
+                <h3>Get your invoice</h3>
+                <p>The system creates an invoice and the admin can assign driver details.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section dark-section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">AVAILABLE NOW</div>
+            <h2>Featured cars</h2>
+        </div>
+
+        <div class="car-grid">
+        {% for car in cars %}
+            <article class="car-card">
+                <div class="car-image" style="background-image:url('{{ car.image_url }}')">
+                    <span>{{ car.category }}</span>
+                </div>
+                <div class="car-body">
+                    <small>{{ car.brand }}</small>
+                    <h3>{{ car.name }}</h3>
+                    <div class="specs">
+                        <span>{{ car.seats }} Seats</span>
+                        <span>Automatic</span>
+                    </div>
+                    <div class="car-footer">
+                        <strong>₹{{ "%.0f"|format(car.price_per_day) }}<small>/day</small></strong>
+                        <a class="btn btn-primary btn-sm" href="{{ url_for('book', car_id=car.id) }}">Book</a>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="empty-state">No cars available right now.</div>
+        {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

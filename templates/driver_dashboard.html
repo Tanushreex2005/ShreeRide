@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Driver Dashboard — ShreeRide{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="dash-header">
+            <div><div class="eyebrow">RIDEX / DRIVER PORTAL</div><h1>Ride requests</h1><p>Only paid requests assigned to you appear here. Accept or reject each pending request.</p></div>
+            <form method="POST" action="{{ url_for('driver_logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline" type="submit">Driver Logout</button></form>
+        </div>
+        <div class="filter-bar">
+            <a class="{% if request_filter == 'All' %}active{% endif %}" href="{{ url_for('driver_dashboard', status='All') }}">All ({{ counts.All }})</a>
+            <a class="{% if request_filter == 'Pending' %}active{% endif %}" href="{{ url_for('driver_dashboard', status='Pending') }}">Pending ({{ counts.Pending }})</a>
+            <a class="{% if request_filter == 'Accepted' %}active{% endif %}" href="{{ url_for('driver_dashboard', status='Accepted') }}">Accepted ({{ counts.Accepted }})</a>
+            <a class="{% if request_filter == 'Rejected' %}active{% endif %}" href="{{ url_for('driver_dashboard', status='Rejected') }}">Rejected ({{ counts.Rejected }})</a>
+        </div>
+        <div class="panel">
+            <div class="panel-head"><div><div class="eyebrow">YOUR REQUESTS</div><h2>Paid ride requests</h2></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Car</th><th>Pickup</th><th>Return</th><th>Payment</th><th>Request</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for b in bookings %}
+                <tr {% if b.is_overdue %}class="row-overdue"{% endif %}>
+                    <td>{{ b.invoice_no }}{% if b.is_overdue %}<br><span class="status-pill status-Cancelled">OVERDUE</span>{% endif %}</td><td>{{ b.user_name }}<br><small>{{ b.user_phone }}</small></td>
+                    <td>{{ b.brand }} {{ b.car_name }}</td><td>{{ b.pickup_date }}<br>{{ b.pickup_time }}<br><small>{{ b.pickup_location }}</small></td>
+                    <td>{{ b.return_date }}<br><small>{{ b.return_location }}</small></td>
+                    <td><span class="status-pill status-Confirmed">PAID</span></td><td><span class="status-pill">{{ b.driver_request_status }}</span></td>
+                    <td>{% if b.driver_request_status == "Pending" %}
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            <form method="POST" action="{{ url_for('driver_respond', booking_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="accept"><button class="btn btn-primary btn-sm" type="submit">Accept</button></form>
+                            <form method="POST" action="{{ url_for('driver_respond', booking_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="reject"><button class="btn btn-danger btn-sm" type="submit">Reject</button></form>
+                        </div>
+                    {% else %}<span class="hello">{{ b.driver_request_status }}</span>{% endif %}</td>
+                </tr>
+            {% else %}<tr><td colspan="8" class="empty-cell">No requests match this filter.</td></tr>{% endfor %}
+            </tbody></table></div>
+        </div>
+    </div>
+</section>
+{% endblock %}

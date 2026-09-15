@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Admin Login — ShreeRide{% endblock %}
+
+{% block content %}
+<section class="auth-scene admin-scene">
+    <div class="road-lines"></div>
+    <div class="auth-card">
+        <div class="auth-top">
+            <a class="brand" href="{{ url_for('index') }}"><span class="brand-word">Shree<i>Ride</i></span></a>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+
+        <div class="auth-heading">
+            <div class="eyebrow">CONTROL ROOM</div>
+            <h1>Admin login</h1>
+            <p>Manage cars, bookings, users and driver assignments.</p>
+        </div>
+
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="field">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="admin" required>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Admin password" required>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Enter Dashboard →</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.log
+
+# Env / secrets - NEVER commit real credentials
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# MySQL / local dumps
+*.sql.gz
+*.dump
+

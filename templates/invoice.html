@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ booking.invoice_no }} — ShreeRide{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container invoice-wrap">
+        <div class="invoice-card">
+            <div class="invoice-head">
+                <div>
+                    <div class="eyebrow">ShreeRide / BOOKING INVOICE</div>
+                    <h1>Reservation confirmed.</h1>
+                </div>
+                <div class="invoice-number">
+                    <small>INVOICE</small>
+                    <strong>{{ booking.invoice_no }}</strong>
+                </div>
+            </div>
+
+            <div class="invoice-status">
+                <span>{{ booking.booking_status|upper }}</span>
+                <span>PAYMENT: {{ booking.payment_status|upper }}</span>
+            </div>
+
+            <div class="invoice-grid">
+                <div>
+                    <small>CUSTOMER</small>
+                    <strong>{{ booking.user_name }}</strong>
+                    <span>{{ booking.email }}</span>
+                    <span>{{ booking.user_phone }}</span>
+                </div>
+                <div>
+                    <small>VEHICLE</small>
+                    <strong>{{ booking.brand }} {{ booking.car_name }}</strong>
+                    <span>{{ booking.category }}</span>
+                    <span>₹{{ "%.0f"|format(booking.price_per_day) }} / day</span>
+                </div>
+                <div>
+                    <small>PICKUP</small>
+                    <strong>{{ booking.pickup_date }}</strong>
+                    <span>{{ booking.pickup_time }}</span>
+                    <span>{{ booking.pickup_location }}</span>
+                </div>
+                <div>
+                    <small>RETURN</small>
+                    <strong>{{ booking.return_date }}</strong>
+                    <span>{{ booking.return_location }}</span>
+                </div>
+            </div>
+
+            <div class="driver-box">
+                <div>
+                    <small>DRIVER ASSIGNED BY ADMIN</small>
+                    {% if booking.driver_request_status == "Accepted" and booking.driver_name %}
+                        <h2>{{ booking.driver_name }}</h2>
+                        <p>{{ booking.driver_phone or "Contact added by the admin." }}</p>
+                    {% elif booking.driver_request_status == "Pending" %}
+                        <h2>Awaiting driver confirmation</h2>
+                        <p>A driver has been requested. Name and contact will appear here only after the driver accepts the request.</p>
+                    {% else %}
+                        <h2>No driver confirmed yet</h2>
+                        <p>{{ "Booking was cancelled." if booking.booking_status == "Cancelled" else "The previous request was declined. The admin will assign another driver." }}</p>
+                    {% endif %}
+                </div>
+                <span class="driver-badge">DRIVER {{ booking.driver_request_status|upper if booking.driver_request_status else "PENDING" }}</span>
+            </div>
+
+            <div class="total-box">
+                <span>{{ booking.duration_days }} day rental</span>
+                <strong>₹{{ "%.2f"|format(booking.total_amount) }}</strong>
+            </div>
+
+            <div class="invoice-actions">
+                <button class="btn btn-primary" onclick="window.print()">Print Invoice</button>
+                {% if admin_view %}<a class="btn btn-outline" href="{{ url_for('admin_dashboard') }}">Dashboard</a>{% else %}<a class="btn btn-outline" href="{{ url_for('my_bookings') }}">My Bookings</a>{% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

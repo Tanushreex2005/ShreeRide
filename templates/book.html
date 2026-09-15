@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Book {{ car.name }} — ShreeRide{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="book-layout">
+            <div>
+                <div class="section-head">
+                    <div class="eyebrow">ADVANCE RESERVATION</div>
+                    <h1>Reserve {{ car.name }}</h1>
+                    <p>Complete the details below. Payment is simulated as paid for this college project.</p>
+                </div>
+
+                <div class="booking-form-card">
+                    <form method="POST" id="booking_form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="pickup_date">Pickup date</label>
+                                <input type="date" id="pickup_date" name="pickup_date" required
+                                       min="{{ min_pickup_date }}" max="{{ max_pickup_date }}"
+                                       value="{{ prefill_pickup_date }}">
+                                <small class="location-help" id="pickup_date_help">
+                                    Booking window: {{ min_pickup_date }} to {{ max_pickup_date }}
+                                    (tomorrow to next 2 months).
+                                </small>
+                            </div>
+                            <div class="field">
+                                <label for="pickup_time">Pickup time</label>
+                                <input type="time" id="pickup_time" name="pickup_time" required value="{{ prefill_pickup_time }}">
+                            </div>
+                        </div>
+
+                        <div class="booking-window-note">
+                            <strong>📅 Advance booking only:</strong>
+                            cars can be reserved from <b>tomorrow</b> up to
+                            <b>2 months ahead</b>. Dates outside this window are disabled in the calendar.
+                        </div>
+
+                        <div class="field">
+                            <label>Pickup location</label>
+                            <input type="text" id="pickup_location" name="pickup_location" placeholder="Search for a pickup location" autocomplete="off" required>
+                            {% if google_maps_api_key %}<small class="location-help">Start typing to search Google Places.</small>{% else %}<small class="location-help">Location search is unavailable until a Google Maps API key is configured.</small>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label>Return location</label>
+                            <input type="text" id="return_location" name="return_location" placeholder="Search for a return/drop location" autocomplete="off" required>
+                            {% if google_maps_api_key %}<small class="location-help">Start typing to search Google Places.</small>{% else %}<small class="location-help">Location search is unavailable until a Google Maps API key is configured.</small>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label>Rental duration</label>
+                            <select name="duration" id="duration" required>
+                                {% for n in range(1, 31) %}
+                                    <option value="{{ n }}" {% if prefill_duration == n %}selected{% endif %}>{{ n }} day{% if n > 1 %}s{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="payment-box">
+                            <div>
+                                <span>Payment mode</span>
+                                <strong>Online / Demo Paid</strong>
+                            </div>
+                            <span class="paid-pill">PAID</span>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" type="submit">
+                            Confirm Reservation & Generate Invoice
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <aside class="summary-card" data-price="{{ car.price_per_day }}" data-car-id="{{ car.id }}">
+                <div class="car-image large" style="background-image:url('{{ car.image_url }}')"></div>
+                <small>{{ car.brand }} • {{ car.category }}</small>
+                <h2>{{ car.name }}</h2>
+                <div class="summary-line"><span>Price / day</span><b>₹{{ "%.0f"|format(car.price_per_day) }}</b></div>
+                <div class="summary-line"><span>Return on</span><b id="return_preview">—</b></div>
+                <div class="summary-line summary-total"><span>Estimated total</span><b id="estimated_total">₹{{ "%.0f"|format(car.price_per_day) }}</b></div>
+                <div class="summary-line"><span>Seats</span><b>{{ car.seats }}</b></div>
+                <div class="summary-line"><span>Availability</span><b class="success-text" id="availability_preview">Checking…</b></div>
+                <div class="summary-note">The admin will assign one of the available drivers. Cancellation is allowed only before 24 hours of pickup.</div>
+            </aside>
+        </div>
+    </div>
+</section>
+
+<script>
+const dateInput = document.getElementById("pickup_date");
+const bookingForm = document.getElementById("booking_form");
+const minPickupDate = dateInput.getAttribute("min");
+const maxPickupDate = dateInput.getAttribute("max");
+
+// Extra safety: also enforce the same window in JS even if the browser
+// calendar widget allows typing an out-of-range value manually.
+if (bookingForm) {
+    bookingForm.addEventListener("submit", function (event) {
+        const selected = dateInput.value;
+        if (!selected) return;
+        if ((minPickupDate && selected < minPickupDate) ||
+            (maxPickupDate && selected > maxPickupDate)) {
+            event.preventDefault();
+            alert("Pickup date must be between " + minPickupDate + " and " + maxPickupDate + " (tomorrow to next 2 months).");
+            dateInput.focus();
+        }
+    });
+}
+
+const durationInput = document.getElementById("duration");
+const timeInput = document.getElementById("pickup_time");
+const summaryCard = document.querySelector(".summary-card");
+const estimatedTotal = document.getElementById("estimated_total");
+const returnPreview = document.getElementById("return_preview");
+const availabilityPreview = document.getElementById("availability_preview");
+const confirmButton = bookingForm ? bookingForm.querySelector('button[type="submit"]') : null;
+const pricePerDay = Number(summaryCard.dataset.price);
+const carId = summaryCard.dataset.carId;
+let availabilityTimer = null;
+function formatINR(amount) {
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency", currency: "INR", maximumFractionDigits: 0
+    }).format(amount);
+}
+function updateEstimatedTotal() {
+    estimatedTotal.textContent = formatINR(pricePerDay * Number(durationInput.value || 1));
+    const pickupDate = dateInput.value;
+    if (pickupDate && returnPreview) {
+        const returnDate = new Date(pickupDate + "T00:00:00");
+        returnDate.setDate(returnDate.getDate() + Number(durationInput.value || 1));
+        returnPreview.textContent = returnDate.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    }
+}
+async function checkAvailability() {
+    updateEstimatedTotal();
+    if (!dateInput.value || !availabilityPreview) return;
+    availabilityPreview.textContent = "Checking…";
+    availabilityPreview.className = "";
+    if (confirmButton) confirmButton.disabled = false;
+    const params = new URLSearchParams({
+        pickup_date: dateInput.value,
+        pickup_time: timeInput.value || "10:00",
+        duration: durationInput.value || "1"
+    });
+    try {
+        const response = await fetch("/api/car-availability/" + carId + "?" + params.toString());
+        const data = await response.json();
+        if (!data.ok) {
+            availabilityPreview.textContent = data.message || "Invalid date";
+            availabilityPreview.className = "error-text";
+            return;
+        }
+        if (data.return_datetime && returnPreview) returnPreview.textContent = data.return_datetime;
+        if (data.total_amount) estimatedTotal.textContent = formatINR(data.total_amount);
+        if (data.available) {
+            availabilityPreview.textContent = "Available ✓";
+            availabilityPreview.className = "success-text";
+            if (confirmButton) confirmButton.disabled = false;
+        } else {
+            availabilityPreview.textContent = "Booked for this period ✕";
+            availabilityPreview.className = "error-text";
+            if (confirmButton) confirmButton.disabled = true;
+        }
+    } catch (err) {
+        availabilityPreview.textContent = "Could not check availability";
+        availabilityPreview.className = "error-text";
+    }
+}
+function scheduleAvailabilityCheck() {
+    if (availabilityTimer) clearTimeout(availabilityTimer);
+    availabilityTimer = setTimeout(checkAvailability, 350);
+}
+durationInput.addEventListener("change", checkAvailability);
+dateInput.addEventListener("change", checkAvailability);
+if (timeInput) timeInput.addEventListener("change", scheduleAvailabilityCheck);
+durationInput.addEventListener("input", updateEstimatedTotal);
+updateEstimatedTotal();
+checkAvailability();
+
+window.initLocationAutocomplete = function () {
+    if (!window.google?.maps?.places) return;
+
+    ["pickup_location", "return_location"].forEach(function (inputId) {
+        const locationInput = document.getElementById(inputId);
+        if (!locationInput) return;
+
+        const autocomplete = new google.maps.places.Autocomplete(locationInput, {
+            componentRestrictions: { country: "in" },
+            fields: ["formatted_address", "name"],
+            types: ["geocode"],
+        });
+        autocomplete.addListener("place_changed", function () {
+            const place = autocomplete.getPlace();
+            if (place.formatted_address) locationInput.value = place.formatted_address;
+        });
+    });
+};
+</script>
+{% if google_maps_api_key %}
+<script async src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key|urlencode }}&libraries=places&callback=initLocationAutocomplete"></script>
+{% endif %}
+{% endblock %}

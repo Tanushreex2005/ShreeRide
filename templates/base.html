@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RideX{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+{% set nav_endpoint = request.endpoint or "" %}
+<nav class="navbar">
+    <div class="container nav-inner">
+        <a class="brand" href="{{ url_for('index') }}"><span class="brand-badge">SR</span><span class="brand-word">Shree<i>Ride</i></span></a>
+
+        <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') !== 'true');document.querySelector('.nav-links').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </button>
+
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}" class="{% if nav_endpoint == 'index' %}active{% endif %}">Home</a>
+            {% if session.get('user_id') %}
+                <a href="{{ url_for('cars') }}" class="{% if nav_endpoint in ['cars','book'] %}active{% endif %}">Cars</a>
+                <a href="{{ url_for('my_bookings') }}" class="{% if nav_endpoint in ['my_bookings','invoice'] %}active{% endif %}">My Bookings</a>
+                <span class="hello">Hi, {{ session.get('user_name') }}</span>
+                <form class="inline-form" method="POST" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline btn-sm" type="submit">Logout</button></form>
+            {% elif session.get('admin_id') %}
+                <a href="{{ url_for('admin_dashboard') }}" class="{% if nav_endpoint.startswith('admin_') %}active{% endif %}">Dashboard</a>
+                <form class="inline-form" method="POST" action="{{ url_for('admin_logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline btn-sm" type="submit">Logout</button></form>
+            {% elif session.get('driver_name') %}
+                <a href="{{ url_for('driver_dashboard') }}" class="{% if nav_endpoint.startswith('driver_') %}active{% endif %}">Driver Dashboard</a>
+                <span class="hello">Hi, {{ session.get('driver_name') }}</span>
+                <form class="inline-form" method="POST" action="{{ url_for('driver_logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline btn-sm" type="submit">Logout</button></form>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="{% if nav_endpoint == 'login' %}active{% endif %}">Login</a>
+                <a href="{{ url_for('driver_login') }}" class="{% if nav_endpoint == 'driver_login' %}active{% endif %}">Driver Login</a>
+                <a href="{{ url_for('admin_login') }}" class="{% if nav_endpoint == 'admin_login' %}active{% endif %}">Admin Login</a>
+                <a class="btn btn-primary btn-sm" href="{{ url_for('signup') }}">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flashes">
+    {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<main id="main-content">
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+    <div class="container footer-inner">
+        <strong>ShreeRide</strong>
+        <span>Advance Car Booking System</span>
+        <span>© 2026 ShreeRide</span>
+    </div>
+</footer>
+
+<script>
+setTimeout(() => {
+    document.querySelectorAll(".flash").forEach(el => {
+        el.style.opacity = "0";
+        el.style.transition = "opacity .4s";
+        setTimeout(() => el.remove(), 450);
+    });
+}, 4000);
+</script>
+</body>
+</html>

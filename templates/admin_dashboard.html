@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — ShreeRide{% endblock %}
+{% block content %}
+<section class="section"><div class="container">
+  <div class="dash-header"><div><div class="eyebrow">ShreeRide / CONTROL ROOM</div><h1>Admin Dashboard</h1><p>Manage cars, bookings, invoices and driver assignments.</p></div><form method="POST" action="{{ url_for('admin_logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline" type="submit">Admin Logout</button></form></div>
+
+  <div class="stat-strip">
+    <div class="stat-cell"><span>Registered users</span><strong>{{ stats.users }}</strong></div>
+    <div class="stat-cell"><span>Total cars</span><strong>{{ stats.cars }}</strong></div>
+    <div class="stat-cell"><span>Total bookings</span><strong>{{ stats.bookings }}</strong></div>
+    <div class="stat-cell accent"><span>Revenue</span><strong>₹{{ "%.0f"|format(stats.revenue) }}</strong></div>
+  </div>
+
+  <div class="stat-strip stat-strip-secondary">
+    <div class="stat-cell"><span>Awaiting driver accept</span><strong>{{ stats.pending_drivers }}</strong></div>
+    <div class="stat-cell"><span>Driver confirmed</span><strong>{{ stats.accepted_drivers }}</strong></div>
+    <div class="stat-cell"><span>Overdue returns</span><strong>{{ stats.overdue }}</strong></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><div><div class="eyebrow">RESERVATIONS</div><h2>Booking management</h2></div></div>
+    <form class="search-panel" method="GET" action="{{ url_for('admin_dashboard') }}">
+      <div class="search-grid">
+        <div class="field">
+          <label>Search invoice / user / car</label>
+          <input type="text" name="q" value="{{ admin_search }}" placeholder="e.g. SR-2026, Arjun, Creta">
+        </div>
+        <div class="field">
+          <label>Booking status</label>
+          <select name="booking_status">
+            {% for s in ["All","Confirmed","Completed","Cancelled"] %}
+              <option value="{{ s }}" {% if booking_status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Driver status</label>
+          <select name="driver_status">
+            <option value="All" {% if driver_status == "All" %}selected{% endif %}>All</option>
+            <option value="Accepted" {% if driver_status == "Accepted" %}selected{% endif %}>Accepted</option>
+            <option value="Pending" {% if driver_status == "Pending" %}selected{% endif %}>Pending</option>
+            <option value="Rejected" {% if driver_status == "Rejected" %}selected{% endif %}>Rejected</option>
+            <option value="NoDriver" {% if driver_status == "NoDriver" %}selected{% endif %}>No confirmed driver</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn btn-primary btn-sm" type="submit">Filter bookings</button>
+        <a class="btn btn-outline btn-sm" href="{{ url_for('admin_dashboard') }}">Clear</a>
+      </div>
+    </form>
+    <div class="result-count">{{ bookings|length }} booking{% if bookings|length != 1 %}s{% endif %} shown</div>
+    <div class="table-wrap"><table><thead><tr><th>Invoice</th><th>User</th><th>Car</th><th>Pickup</th><th>Return</th><th>Amount</th><th>Driver</th><th>Status</th><th>Invoice</th></tr></thead>
+    <tbody>{% for b in bookings %}<tr {% if b.is_overdue %}class="row-overdue"{% endif %}>
+      <td>{{ b.invoice_no }}{% if b.is_overdue %}<br><span class="status-pill status-Cancelled">OVERDUE</span>{% endif %}</td><td>{{ b.user_name }}<br><small>{{ b.user_phone }}</small></td>
+      <td>{{ b.brand }} {{ b.car_name }}</td><td>{{ b.pickup_date }}<br>{{ b.pickup_time }}<br><small>{{ b.pickup_location }}</small></td><td>{{ b.return_date }}<br><small>{{ b.return_location }}</small></td><td>₹{{ "%.0f"|format(b.total_amount) }}</td>
+      <td>
+        <form class="driver-form" method="POST" action="{{ url_for('assign_driver', booking_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <select name="driver_id" required><option value="">Select driver</option>{% for d in available_drivers_by_booking.get(b.id, []) %}<option value="{{ d.id }}" {% if b.driver_id == d.id %}selected{% endif %}>{{ d.name }} — {{ d.phone }}</option>{% endfor %}</select>
+          <button class="btn btn-primary btn-sm" type="submit">Assign</button>
+        </form>
+        <form method="POST" action="{{ url_for('auto_assign_driver', booking_id=b.id) }}" style="margin-top:6px"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline btn-sm" type="submit">Pick random free driver</button></form>
+        {% if b.driver_request_status == "Accepted" and b.driver_name %}
+          <small>Confirmed: {{ b.driver_name }}<br>{{ b.driver_phone }}</small>
+        {% elif b.driver_request_status == "Pending" and b.driver_name %}
+          <small>Requested: {{ b.driver_name }}<br>{{ b.driver_phone }}<br><em>Awaiting driver confirmation</em></small>
+        {% elif b.driver_name %}
+          <small>Assigned: {{ b.driver_name }}<br>{{ b.driver_phone }}</small>
+        {% else %}
+          <small>No driver confirmed yet</small>
+        {% endif %}
+        {% if b.driver_request_status %}<br><small>Status: {{ b.driver_request_status }}</small>{% endif %}
+      </td>
+      <td><form class="status-form" method="POST" action="{{ url_for('update_status', booking_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><select name="status">{% for s in ["Confirmed","Completed","Cancelled"] %}<option value="{{ s }}" {% if b.booking_status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select><button class="btn btn-outline btn-sm" type="submit">Save</button></form></td>
+      <td><a class="btn btn-outline btn-sm" href="{{ url_for('admin_invoice', booking_id=b.id) }}">View / Print</a></td>
+    </tr>{% else %}<tr><td colspan="9" class="empty-cell">No bookings match these filters.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+
+  <div class="panel"><div class="panel-head"><div><div class="eyebrow">FLEET</div><h2>Add a car</h2></div></div>
+    <form class="add-car-form" method="POST" action="{{ url_for('add_car') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field"><label>Car name</label><input name="name" placeholder="e.g. City ZX" required></div><div class="field"><label>Brand</label><input name="brand" placeholder="e.g. Honda" required></div>
+      <div class="field"><label>Category</label><select name="category"><option>Sedan</option><option>SUV</option><option>Hatchback</option><option>Luxury</option><option>Electric</option><option>MPV</option></select></div>
+      <div class="field"><label>Seats</label><input type="number" name="seats" min="2" max="12" value="5" required></div><div class="field"><label>Price / day</label><input type="number" name="price" min="1" step="0.01" required></div>
+      <div class="field full"><label>Car image URL</label><input name="image_url" placeholder="https://..."></div><button class="btn btn-primary" type="submit">Add Car</button>
+    </form>
+  </div>
+
+  <div class="panel"><div class="panel-head"><div><div class="eyebrow">DRIVER POOL</div><h2>Driver accounts</h2><p>Driver eligibility is calculated for each booking's exact pickup and return period. Inactive drivers are hidden from assignment.</p></div></div>
+    <form class="add-car-form" method="POST" action="{{ url_for('add_driver') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field"><label>Driver name</label><input name="name" placeholder="e.g. Karan Mehta" required></div>
+      <div class="field"><label>Phone</label><input name="phone" placeholder="10-digit number" pattern="[0-9]{10}" required></div>
+      <div class="field"><label>Password</label><input type="password" name="password" minlength="8" placeholder="Min 8 characters" required></div>
+      <button class="btn btn-primary" type="submit">Add Driver</button>
+    </form>
+    <div class="car-admin-grid" style="margin-top:16px">{% for d in drivers %}<div class="admin-car-row"><div><strong>{{ d.name }}</strong><span>{{ d.phone }} • login with phone + password</span></div><span class="status-pill">{{ d.status }}</span><form method="POST" action="{{ url_for('toggle_driver', driver_id=d.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline btn-sm" type="submit">{% if d.status == "Active" %}Deactivate{% else %}Activate{% endif %}</button></form></div>{% endfor %}</div>
+  </div>
+
+  <div class="panel"><div class="panel-head"><div><div class="eyebrow">FLEET STATUS</div><h2>Manage cars</h2></div></div>
+    <div class="car-admin-grid">{% for car in cars %}<div class="admin-car-row"><div class="admin-car-thumb" style="background-image:url('{{ car.image_url }}')"></div><div><strong>{{ car.brand }} {{ car.name }}</strong><span>{{ car.category }} • {{ car.seats }} seats • ₹{{ "%.0f"|format(car.price_per_day) }}/day</span></div><span class="status-pill">{{ car.status }}</span><form method="POST" action="{{ url_for('toggle_car', car_id=car.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline btn-sm" type="submit">{% if car.status == "Available" %}Make unavailable{% else %}Make available{% endif %}</button></form></div>{% endfor %}</div>
+  </div>
+
+  <div class="panel"><div class="panel-head"><div><div class="eyebrow">CUSTOMERS</div><h2>Registered users</h2></div></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr></thead><tbody>{% for u in users %}<tr><td>#{{ u.id }}</td><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.phone }}</td><td>{{ u.created_at }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div></section>
+{% endblock %}

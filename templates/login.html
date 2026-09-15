@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Login — ShreeRide{% endblock %}
+
+{% block content %}
+<section class="auth-scene login-scene">
+    <div class="night-fx" id="nightFx" aria-hidden="true">
+        <div class="moon"></div>
+        <div class="stars" id="loginStars"></div>
+        <div class="skyline" id="loginSkyline"></div>
+        <div class="road"><div class="lane"></div></div>
+        <div class="car-wrap">
+            <div class="beam"></div>
+            <svg width="150" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 40 Q18 18 46 16 L120 16 Q142 16 150 34 L166 36 Q172 37 172 42 L172 46 Q172 50 168 50 L14 50 Q10 50 10 46 Z" fill="#e85d3d"/>
+                <path d="M46 18 Q60 8 84 8 L112 8 Q128 8 134 18 L134 24 L46 24 Z" fill="#1e2126" opacity="0.9"/>
+                <circle cx="42" cy="50" r="10" fill="#14161a" stroke="#33373f" stroke-width="2"/>
+                <circle cx="140" cy="50" r="10" fill="#14161a" stroke="#33373f" stroke-width="2"/>
+                <circle cx="42" cy="50" r="4" fill="#9a9a94"/>
+                <circle cx="140" cy="50" r="4" fill="#9a9a94"/>
+                <circle cx="169" cy="41" r="4" fill="#ffe6b0"/>
+                <circle cx="14" cy="41" r="3" fill="#ff8a5c"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="auth-card card-enter">
+        <div class="auth-top">
+            <a class="brand" href="{{ url_for('index') }}"><span class="brand-word">Shree<i>Ride</i></span></a>
+            <span class="live-dot" title="System online"></span>
+        </div>
+
+        <div class="auth-heading">
+            <div class="eyebrow">WELCOME BACK 👋</div>
+            <h1>Login to ShreeRide</h1>
+            <p>Access your advance car reservations.</p>
+        </div>
+
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="field">
+                <label>Email address</label>
+                <input type="email" name="email" placeholder="you@example.com" required>
+            </div>
+
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter password" required>
+            </div>
+
+            <button class="btn btn-primary btn-block btn-shine" type="submit">Login →</button>
+            <p class="auth-microcopy">Secure login • Your bookings and invoices stay private.</p>
+        </form>
+
+        <div class="auth-switch">
+            New to ShreeRide?
+            <a href="{{ url_for('signup') }}">Create an account</a>
+        </div>
+    </div>
+    <div class="night-hint">click the night sky ✨</div>
+</section>
+
+<script>
+(function () {
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var fx = document.getElementById('nightFx');
+    if (!fx) return;
+
+    var starsBox = document.getElementById('loginStars');
+    var STAR_COUNT = reduceMotion ? 0 : 70;
+    for (var i = 0; i < STAR_COUNT; i++) {
+        var s = document.createElement('div');
+        s.className = 'star';
+        s.style.left = (Math.random() * 100) + '%';
+        s.style.top = (Math.random() * 62) + '%';
+        var size = Math.random() * 1.6 + 1;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.animationDuration = (2 + Math.random() * 4) + 's';
+        s.style.animationDelay = (Math.random() * 4) + 's';
+        starsBox.appendChild(s);
+    }
+
+    (function buildSkyline() {
+        var seed = 11, x = 0, out = '';
+        function rnd(a, b) { seed = (seed * 9301 + 49297) % 233280; return a + (seed / 233280) * (b - a); }
+        while (x < 1600) {
+            var w = rnd(30, 70), h = rnd(30, 110);
+            out += '<rect x="' + x + '" y="' + (120 - h) + '" width="' + w + '" height="' + h + '" fill="#1a1d24"/>';
+            if (rnd(0, 1) > 0.5) {
+                out += '<rect x="' + (x + w * 0.3) + '" y="' + (120 - h + 8) + '" width="4" height="6" fill="#ffb020" opacity="0.6"/>';
+            }
+            x += w + rnd(6, 18);
+        }
+        document.getElementById('loginSkyline').innerHTML = '<svg viewBox="0 0 1600 120" preserveAspectRatio="none">' + out + '</svg>';
+    })();
+
+    function fireShootingStar(x, y) {
+        var el = document.createElement('div');
+        el.className = 'shooting-star fire';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        fx.appendChild(el);
+        setTimeout(function () { el.remove(); }, 1200);
+    }
+
+    fx.addEventListener('click', function (e) {
+        var rect = fx.getBoundingClientRect();
+        fireShootingStar(e.clientX - rect.left, e.clientY - rect.top);
+    });
+
+    if (!reduceMotion) {
+        setInterval(function () {
+            var rect = fx.getBoundingClientRect();
+            var x = Math.random() * rect.width * 0.7 + rect.width * 0.15;
+            var y = Math.random() * rect.height * 0.3;
+            fireShootingStar(x, y);
+        }, 4500);
+    }
+})();
+</script>
+{% endblock %}

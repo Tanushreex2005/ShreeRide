@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}My Bookings — ShreeRide{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="eyebrow">YOUR RESERVATIONS</div>
+            <h1>My bookings</h1>
+        </div>
+
+        {% if overdue_count %}
+        <div class="search-alert search-alert-error">
+            ⚠️ {{ overdue_count }} confirmed booking{{ "s" if overdue_count != 1 }} ha{{ "s" if overdue_count == 1 else "ve" }} passed the return time. Please contact support if the car was returned.
+        </div>
+        {% endif %}
+
+        <form class="search-panel" method="GET" action="{{ url_for('my_bookings') }}">
+            <div class="search-grid">
+                <div class="field">
+                    <label>Search invoice / car</label>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="e.g. SR-2026, Creta">
+                </div>
+                <div class="field">
+                    <label>Booking status</label>
+                    <select name="status">
+                        {% for s in ["All","Confirmed","Completed","Cancelled"] %}
+                            <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Driver status</label>
+                    <select name="driver">
+                        <option value="All" {% if driver_filter == "All" %}selected{% endif %}>All</option>
+                        <option value="Accepted" {% if driver_filter == "Accepted" %}selected{% endif %}>Accepted (name visible)</option>
+                        <option value="Pending" {% if driver_filter == "Pending" %}selected{% endif %}>Pending confirmation</option>
+                        <option value="Rejected" {% if driver_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+                        <option value="NoDriver" {% if driver_filter == "NoDriver" %}selected{% endif %}>No confirmed driver</option>
+                    </select>
+                </div>
+            </div>
+            <div class="search-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+                <a class="btn btn-outline btn-sm" href="{{ url_for('my_bookings') }}">Clear</a>
+            </div>
+        </form>
+
+            <div class="result-count">{{ bookings|length }} booking{% if bookings|length != 1 %}s{% endif %} found</div>
+            <div class="cancellation-policy">
+    <div class="policy-title">
+        Cancellation Policy
+    </div>
+
+    <div class="policy-text">
+        You can cancel a confirmed booking <strong>up to 24 hours before
+        the scheduled pickup time</strong>.
+        After the 24-hour cancellation window has passed,
+        cancellation is not allowed.
+    </div>
+
+    <div class="policy-note">
+        <span>✓</span>
+        Cancellation before 24 hours → Allowed
+    </div>
+
+    <div class="policy-note policy-warning">
+        <span>!</span>
+        Less than 24 hours before pickup → Cancellation not allowed
+    </div>
+</div>
+
+        <div class="panel">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Car</th>
+                            <th>Pickup</th>
+                            <th>Return</th>
+                            <th>Driver</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for b in bookings %}
+                        <tr {% if b.is_overdue %}class="row-overdue"{% endif %}>
+                            <td>{{ b.invoice_no }}{% if b.is_overdue %}<br><span class="status-pill status-Cancelled">OVERDUE</span>{% endif %}</td>
+                            <td>{{ b.brand }} {{ b.car_name }}</td>
+                            <td>{{ b.pickup_date }}<br>{{ b.pickup_time }}<br><small>{{ b.pickup_location }}</small></td>
+                            <td>{{ b.return_date }}<br><small>{{ b.return_location }}</small></td>
+                            <td>
+                                {% if b.driver_request_status == "Accepted" and b.driver_name %}
+                                    {{ b.driver_name }}
+                                    {% if b.driver_phone %}<br><small>{{ b.driver_phone }}</small>{% endif %}
+                                {% elif b.driver_request_status == "Pending" %}
+                                    <small>Awaiting driver confirmation</small>
+                                {% else %}
+                                    <small>No driver confirmed yet</small>
+                                {% endif %}
+                            </td>
+                            <td><span class="status-pill status-{{ b.booking_status }}">{{ b.booking_status }}</span><br><small>Driver: {{ b.driver_request_status }}</small></td>
+                            <td>₹{{ "%.0f"|format(b.total_amount) }}</td>
+                            <td>
+                                <a class="btn btn-outline btn-sm" href="{{ url_for('invoice', booking_id=b.id) }}">Invoice</a>
+                                
+                                {% if b.booking_status == "Confirmed" %}
+                                <form class="inline-form"
+                                 method="POST"
+                                 action="{{ url_for('cancel_booking', booking_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                                <button
+                                 class="btn btn-danger btn-sm"
+                                 type="submit"
+                                 onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                 Cancel
+                                </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="8" class="empty-cell">No bookings match these filters.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
