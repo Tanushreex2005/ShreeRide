@@ -1,0 +1,22 @@
+name: Bug Report
+description: Report a reproducible bug
+labels: [bug]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: 1. Signup 2. Book car 3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Python / MySQL versions
+      placeholder: Python 3.12.3 / MySQL 8.0

@@ -1,34 +1,43 @@
 # ShreeRide - Advance Car Booking System
 
 Flask + MySQL car rental web app with customer, driver, and admin workflows.
+Search and filter cars, book by date/time period, generate invoices, assign
+drivers, and manage fleet.
+
+## Badges
+Python 3.12 | Flask 3.1 | MySQL 8.0 | Private repo | MIT License
+
+## Highlights
+- Triple-role app: customer, driver, admin in one Flask codebase
+- Conflict-safe booking: no double-booked car or driver for overlapping periods
+- Advance window: tomorrow to +2 calendar months, 24h cancel rule
+- Invoices, search + filters, overdue flags, Google Places (optional)
 
 ## Features - Customers
-- Signup/login with hashed passwords
-- Browse cars with search, seats and price filters
-- Availability check per pickup period (no double booking)
-- Advance booking only: tomorrow to +2 months
-- Live total price preview, demo payment as Paid
-- Digital invoice view + print
+- Signup/login with hashed passwords (Werkzeug scrypt)
+- Browse cars with search (name/brand), seats and price filters
+- Availability check per pickup period, live return-date + total preview
+- Demo payment recorded as Paid, digital invoice view + print
 - Cancel Confirmed only before 24h of pickup (becomes Refunded)
+- My Bookings dashboard with search + status filters
 
 ## Features - Drivers and Admin
-- Driver login by phone, Accept/Reject jobs
+- Driver login by phone, Accept/Reject jobs, Active/Inactive control
 - Customer sees driver details only after Accept
-- Admin: add cars, toggle Available, view all bookings/invoices
-- Admin: add/activate drivers, manual or auto assign
-- Conflict-safe driver assignment, overdue flags
+- Admin: add cars, toggle Available/Unavailable, view all bookings + invoices
+- Admin: add drivers, manual pick or random auto-assign of free driver
+- Completed/Cancelled releases car + driver
 
 ## Tech Stack
-- Python 3.12, Flask 3.1, Werkzeug
-- MySQL 8.0 via mysql-connector-python
-- Jinja2 templates, HTML/CSS, optional Google Places
-- python-dotenv + .env config
+- Backend: Python 3.12, Flask 3.1, Werkzeug, mysql-connector-python
+- Frontend: Jinja2, HTML/CSS, Google Places autocomplete (optional)
+- Config: python-dotenv + .env, session cookies HttpOnly SameSite=Lax
 
 ## Project Structure
-- app.py : main Flask app
-- database.sql : fresh schema + seed data
-- migrations/ : 002 to 005 upgrade scripts in order
-- static/style.css and templates/ : frontend (12 pages)
+- app.py : routes, auth, booking logic, validation
+- database.sql : fresh schema + seed (admin, 6 drivers, 12 cars)
+- migrations/002-005 : one-time upgrades for existing DBs, in order
+- static/style.css + templates/ (12 pages) : UI
 - requirements.txt, .env.example, .gitignore, LICENSE
 
 ## Requirements
@@ -36,38 +45,52 @@ Flask + MySQL car rental web app with customer, driver, and admin workflows.
 - Optional Google Maps browser key for Places autocomplete
 
 ## Quick Start
-1. git clone https://github.com/<YOUR_USERNAME>/ShreeRide.git
+1. git clone https://github.com/Tanushreex2005/ShreeRide.git
 2. cd ShreeRide
 3. python -m venv venv
-4. venv/Scripts/activate (Windows) or source venv/bin/activate (Linux/Mac)
+4. venv/Scripts/activate (Windows) or source venv/bin/activate (Mac/Linux)
 5. pip install -r requirements.txt
-6. cp .env.example .env  (then edit MYSQL password + SECRET_KEY)
+6. cp .env.example .env (edit MYSQL password + SECRET_KEY)
 7. In MySQL run: SOURCE database.sql;
 8. python app.py, open http://127.0.0.1:5000/
 
+Fresh DB already includes migrations. For existing DB run 002,003,004,005
+once in order. Never run migrations after fresh database.sql import.
+
 ## Env Example
-- MYSQL_HOST=localhost
-- MYSQL_USER=root
-- MYSQL_PASSWORD=YOUR_MYSQL_PASSWORD
-- MYSQL_DATABASE=ridex_db
-- SECRET_KEY=long-random-string (generate via secrets.token_urlsafe)
-- FLASK_ENV=development
-- GOOGLE_MAPS_API_KEY=optional
+- MYSQL_HOST=localhost, MYSQL_USER=root
+- MYSQL_PASSWORD=YOUR_MYSQL_PASSWORD, MYSQL_DATABASE=ridex_db
+- SECRET_KEY=long-random-string via python secrets.token_urlsafe(32)
+- FLASK_ENV=development, GOOGLE_MAPS_API_KEY=optional
 
 ## Demo Logins (change before deploy)
-- Admin: /admin/login admin / admin123
-- Drivers: /driver/login phones 9876543210, 9123456780, 9830123456, 9007123456, 8910123456, 9087654321 password driver123
+- Admin /admin/login : admin / admin123
+- Drivers /driver/login password driver123 :
+  9876543210 Arjun, 9123456780 Rahul, 9830123456 Sourav,
+  9007123456 Amit, 8910123456 Rohan, 9087654321 Vikram
 - Customers: self-register at /signup
 
-## Routes
-- / Home, /cars Fleet, /book/<car_id> Booking (login)
+## Routes and Rules
+- / Home, /cars Fleet + filters, /book/<car_id> Booking
 - /my-bookings History, /invoice/<id> Invoice
 - /admin/login Dashboard, /driver/login Dashboard
+- pickup tomorrow to +2 months, return after pickup, no overlap,
+  cancel only if pickup minus now >= 24h
+
+## Screenshots
+Add your screenshots under docs/screenshots/ then link here:
+- docs/screenshots/home.png, cars.png, booking.png, invoice.png,
+  admin-dashboard.png, driver-dashboard.png
 
 ## Security
-- Real .env never committed (gitignored)
+- Real .env never committed (gitignored), fail-fast if keys missing
 - Passwords hashed, HttpOnly SameSite=Lax cookies, Secure in prod
-- Server validates dates, overlap, 24h cancel rule, category/seats/price
+- Validates email/phone, category whitelist, seats/price, image URL
+
+## Contributing
+See CONTRIBUTING.md. Use feature branches + PRs to main.
 
 ## License
-MIT - see LICENSE. Author Tanushree. Private repo.
+MIT - see LICENSE. Author Tanushree.
+Built with Flask + MySQL. Private repo.
+
