@@ -35,8 +35,8 @@ Python 3.12 | Flask 3.1 | MySQL 8.0 | Private repo | MIT License
 
 ## Project Structure
 - app.py : routes, auth, booking logic, validation
-- database.sql : fresh schema + seed (admin, 6 drivers, 12 cars)
-- migrations/002-005 : one-time upgrades for existing DBs, in order
+- database.sql : single clean database - full schema + seed
+  (admin, 6 drivers, 12 cars, all indexes, Electric/MPV included)
 - static/style.css + templates/ (12 pages) : UI
 - requirements.txt, .env.example, .gitignore, LICENSE
 
@@ -51,11 +51,11 @@ Python 3.12 | Flask 3.1 | MySQL 8.0 | Private repo | MIT License
 4. venv/Scripts/activate (Windows) or source venv/bin/activate (Mac/Linux)
 5. pip install -r requirements.txt
 6. cp .env.example .env (edit MYSQL password + SECRET_KEY)
-7. In MySQL run: SOURCE database.sql;
+7. In MySQL run: SOURCE database.sql; (single file creates everything)
 8. python app.py, open http://127.0.0.1:5000/
 
-Fresh DB already includes migrations. For existing DB run 002,003,004,005
-once in order. Never run migrations after fresh database.sql import.
+No migrations folder - database.sql already contains all tables,
+indexes, drivers, and latest cars.
 
 ## Env Example
 - MYSQL_HOST=localhost, MYSQL_USER=root

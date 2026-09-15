@@ -12,7 +12,7 @@ Thanks for your interest. This repo is currently Private.
 ## Standards
 - Python 3.10+, Flask 3.1 style, no secrets in code or commits
 - Validate all user input server-side, hash passwords, never log .env
-- Keep migrations idempotent-ordered, update database.sql for fresh installs
+- Keep database.sql as single source of truth for fresh installs
 - Update README if routes, env vars, or setup change
 
 ## Reporting issues
