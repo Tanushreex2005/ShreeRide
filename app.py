@@ -120,7 +120,7 @@ def is_overdue(booking, now: datetime | None = None) -> bool:
 
 def car_is_available(car_id, pickup_at, return_at, exclude_booking_id=None):
     """Check whether a car is free for [pickup_at, return_at)."""
-    params = [car_id, return_at, pickup_at]
+    params = [car_id, return_at, pickup_at] #SQL query-এর parameters তৈরি....এই মানগুলো SQL query-এর %s placeholder-এ বসানো হবে
     query = """SELECT id FROM bookings
                WHERE car_id=%s AND booking_status='Confirmed'
                  AND TIMESTAMP(pickup_date, pickup_time) < %s
@@ -200,13 +200,13 @@ def create_booking(user_id, car_id, pickup_at, pickup_location, return_location,
             conn.close()
 
 
-@app.context_processor
+@app.context_processor #Flask-এর context processor decorator...এর ফলে এই function যে dictionary ফেরত দেয়, তা সব Jinja template-এ ব্যবহার করা যায়।
 def csrf_context():
-    token = session.get("csrf_token")
+    token = session.get("csrf_token") #বর্তমান user session-এ আগে থেকে csrf_token আছে কি না পরীক্ষা করা হচ্ছে
     if not token:
         token = secrets.token_urlsafe(32)
         session["csrf_token"] = token
-    return {
+    return {  #Template-এ variable পাঠানো
         "csrf_token": token,
         "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", ""),
     }
@@ -216,19 +216,19 @@ def csrf_context():
 def protect_post_requests():
     if request.method == "POST":
         expected = session.get("csrf_token", "")
-        submitted = request.form.get("csrf_token", "")
+        submitted = request.form.get("csrf_token", "")  #HTML form থেকে csrf_token field-এর value নেওয়া হচ্ছে...Field না থাকলে খালি string পাওয়া যাবে।
         if not expected or not submitted or not hmac.compare_digest(expected, submitted):
             abort(400, "Invalid or missing CSRF token.")
 
 
 def user_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
+    @wraps(view)  #@wraps(view) মূল function-এর নাম ও metadata সংরক্ষণ করে
+    def wrapped(*args, **kwargs):  #এখানে view হলো সেই route function, যেটিকে login protection দেওয়া হবে
         if "user_id" not in session:
             flash("Please login first.", "warning")
             return redirect(url_for("login"))
-        return view(*args, **kwargs)
-    return wrapped
+        return view(*args, **kwargs)  #যদি session-এ user_id থাকে, তাহলে user login করা আছে। তাই মূল route function চালানো হয়
+    return wrapped  #শেষে নতুন wrapper function ফেরত দেওয়া হয়
 
 
 def admin_required(view):
@@ -324,7 +324,7 @@ def cars():
     duration = request.args.get("duration", "").strip() or "1"
 
     where = ["status='Available'"]
-    params: list = []
+    params: list = [] #params-এ SQL query-এর নিরাপদ parameter রাখা হবে।
     if category != "All":
         where.append("category=%s")
         params.append(category)
@@ -365,9 +365,11 @@ def cars():
             duration_days = int(duration)
             if not 1 <= duration_days <= 30:
                 raise ValueError
-            pickup_at = datetime.strptime(f"{pickup_date} {pickup_time}", "%Y-%m-%d %H:%M")
+            pickup_at = datetime.strptime(f"{pickup_date} {pickup_time}", "%Y-%m-%d %H:%M") # তারিখ ও সময়কে Python datetime object-এ রূপান্তর করা হয়।
             return_at = pickup_at + timedelta(days=duration_days)
-            min_pickup, max_pickup = booking_window()
+            min_pickup, max_pickup = (
+                booking_window()
+            )  # Booking-এর অনুমোদিত সর্বনিম্ন ও সর্বোচ্চ তারিখ নেওয়া হয়।
             if pickup_at <= datetime.now() or not min_pickup <= pickup_at.date() <= max_pickup:
                 availability_error = (
                     f"Pickup must be between {min_pickup.isoformat()} and {max_pickup.isoformat()}."
@@ -383,7 +385,7 @@ def cars():
             availability_error = "Enter a valid pickup date, time and duration (1-30 days)."
 
     min_pickup, max_pickup = booking_window()
-    return render_template(
+    return render_template(  # cars.html template-এ গাড়ির তালিকা, filter-এর মান, error message এবং booking window পাঠানো হয়।
         "cars.html",
         cars=car_list,
         category=category,
@@ -405,7 +407,9 @@ def cars():
 @user_required
 def car_availability(car_id):
     """Live availability check used by the booking page calendar."""
-    pickup_date = request.args.get("pickup_date", "").strip()
+    pickup_date = request.args.get(
+        "pickup_date", ""
+    ).strip()  # URL query string থেকে pickup date নেওয়া হয়।..../api/car-availability/5?pickup_date=2026-09-20
     pickup_time = request.args.get("pickup_time", "").strip() or "10:00"
     duration = request.args.get("duration", "1").strip()
     try:
@@ -414,7 +418,15 @@ def car_availability(car_id):
             raise ValueError
         pickup_at = datetime.strptime(f"{pickup_date} {pickup_time}", "%Y-%m-%d %H:%M")
     except ValueError:
-        return jsonify({"ok": False, "message": "Enter a valid pickup date, time and duration."}), 400
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "message": "Enter a valid pickup date, time and duration.",
+                }
+            ),
+            400,
+        )  # 400 status code-এর অর্থ হলো request-এ invalid input আছে।
     return_at = pickup_at + timedelta(days=duration_days)
     if pickup_at <= datetime.now():
         return jsonify({"ok": False, "available": False, "message": "Pickup must be in the future."})
@@ -439,7 +451,7 @@ def car_availability(car_id):
         "message": "Car is available for this period." if available else "Car is already booked during that period.",
     })
 
-
+# এই ফাংশনটি নির্দিষ্ট একটি গাড়ির জন্য বুকিং ফর্ম দেখায় এবং ফর্ম সাবমিট হলে বুকিং তৈরি করে।
 @app.route("/book/<int:car_id>", methods=["GET", "POST"])
 @user_required
 def book(car_id):
@@ -450,6 +462,7 @@ def book(car_id):
 
     min_pickup_date, max_pickup_date = booking_window()
     # Allow the cars page to carry its checked date/time into the booking form.
+    # গাড়ির তালিকা পেজ থেকে URL query parameter হিসেবে পাঠানো তারিখ, সময় এবং duration নেওয়া হয়।
     prefill_pickup_date = request.args.get("pickup_date", "").strip()
     prefill_pickup_time = request.args.get("pickup_time", "").strip() or "10:00"
     prefill_duration = request.args.get("duration", "").strip() or "1"
@@ -461,9 +474,11 @@ def book(car_id):
         prefill_duration_days = 1
     try:
         if prefill_pickup_date:
-            datetime.strptime(f"{prefill_pickup_date} {prefill_pickup_time}", "%Y-%m-%d %H:%M")
+            datetime.strptime(
+                f"{prefill_pickup_date} {prefill_pickup_time}", "%Y-%m-%d %H:%M"
+            )  # তারিখ ও সময় সঠিক format-এ আছে কিনা পরীক্ষা করা হয়
         else:
-            prefill_pickup_date = ""
+            prefill_pickup_date = ""  # ভুল হলে তারিখ খালি করে দেওয়া হয়।
     except ValueError:
         prefill_pickup_date = ""
     booking_context = {
@@ -477,7 +492,9 @@ def book(car_id):
     if request.method == "POST":
         pickup_date = request.form["pickup_date"]
         pickup_time = request.form["pickup_time"]
-        pickup_location = request.form.get("pickup_location", "").strip()
+        pickup_location = request.form.get(
+            "pickup_location", ""
+        ).strip()  # strip() অতিরিক্ত whitespace সরিয়ে দেয়
         return_location = request.form["return_location"].strip()
         duration = request.form["duration"]
         try:
@@ -489,7 +506,9 @@ def book(car_id):
         if booking_date <= datetime.now():
             flash("Booking must be for a future date and time.", "error")
             return render_template("book.html", car=car, **booking_context)
-        if not min_pickup_date <= booking_date.date() <= max_pickup_date:
+        if (
+            not min_pickup_date <= booking_date.date() <= max_pickup_date
+        ):  # বুকিংয়ের তারিখ বর্তমান তারিখ থেকে পরবর্তী দুই মাসের মধ্যে কিনা পরীক্ষা করা হয়।
             flash(
                 f"Pickup date must be between {min_pickup_date.strftime('%d %b %Y')} "
                 f"and {max_pickup_date.strftime('%d %b %Y')} (current date to next 2 months).",
@@ -510,7 +529,14 @@ def book(car_id):
             flash("Duration must be between 1 and 30 days.", "error")
             return render_template("book.html", car=car, **booking_context)
 
-        booking_id, error = create_booking(session["user_id"], car_id, booking_date, pickup_location, return_location, duration_days)
+        booking_id, error = create_booking(
+            session["user_id"],
+            car_id,
+            booking_date,
+            pickup_location,
+            return_location,
+            duration_days,
+        )  # create_booking() ফাংশনে পাঠানো হয়
         if error:
             flash(error, "error")
             return render_template("book.html", car=car, **booking_context)
@@ -520,13 +546,22 @@ def book(car_id):
     return render_template("book.html", car=car, **booking_context)
 
 
-def get_booking(booking_id):
+def get_booking(
+    booking_id,
+):  # এই get_booking() ফাংশনটি নির্দিষ্ট একটি booking-এর বিস্তারিত তথ্য ডেটাবেস থেকে সংগ্রহ করে।
     return query_db(
         """SELECT b.*, u.name AS user_name, u.email, u.phone AS user_phone,
                   c.name AS car_name, c.brand, c.category, c.price_per_day
            FROM bookings b JOIN users u ON b.user_id=u.id JOIN cars c ON b.car_id=c.id
            WHERE b.id=%s""", (booking_id,), fetchone=True)
 
+
+#এখানে:
+# bookings টেবিলকে b নামে সংক্ষিপ্ত করা হয়েছে।
+# users টেবিলের সঙ্গে b.user_id = u.id দিয়ে সম্পর্ক তৈরি করা হয়েছে।
+# cars টেবিলের সঙ্গে b.car_id = c.id দিয়ে সম্পর্ক তৈরি করা হয়েছে।
+
+# অর্থাৎ, একটি booking-এর সঙ্গে সংশ্লিষ্ট user এবং car-এর তথ্য একসঙ্গে পাওয়া যাবে।
 
 @app.route("/invoice/<int:booking_id>")
 @user_required
