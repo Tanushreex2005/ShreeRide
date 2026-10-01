@@ -1,0 +1,34 @@
+﻿# Render.com deployment configuration for ShreeRide VFX
+# This file defines the services needed for deployment
+#
+# NOTE: Render does not provide managed MySQL. For MySQL, you have two options:
+# 1. Use an external MySQL provider (PlanetScale, Railway, Aiven, etc.) and set MYSQL_* env vars
+# 2. Use Render's managed PostgreSQL (requires SQL query modifications in app.py)
+#
+# This configuration uses Option 1: External MySQL
+
+services:
+  # Web service - the Flask application
+  - type: web
+    name: shreeride-vfx
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      # Set these to your external MySQL provider values (PlanetScale, Railway, Aiven, etc.)
+      - key: MYSQL_HOST
+        value: your-mysql-host
+      - key: MYSQL_USER
+        value: your-mysql-user
+      - key: MYSQL_PASSWORD
+        value: your-mysql-password
+      - key: MYSQL_DATABASE
+        value: ridex_db
+      # Optional: Google Maps API Key
+      - key: GOOGLE_MAPS_API_KEY
+        value: your-google-maps-api-key
