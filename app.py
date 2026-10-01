@@ -643,12 +643,16 @@ def driver_login():
     if request.method == "POST":
         phone = request.form["phone"].strip()
         password = request.form["password"]
-        driver = query_db("SELECT * FROM drivers WHERE phone=%s AND status='Active'", (phone,), fetchone=True)
-        if driver and not check_password_hash(driver["password"], password):
-            driver = None
+        driver = query_db("SELECT * FROM drivers WHERE phone=%s AND status='Active'", (phone,), fetchone=True, commit=False)
         if not driver:
             flash("Invalid driver phone or password.", "error")
             return render_template("driver_login.html")
+        password_valid, needs_upgrade = verify_password(driver["password"], password)
+        if not password_valid:
+            flash("Invalid driver phone or password.", "error")
+            return render_template("driver_login.html")
+        if needs_upgrade:
+            query_db("UPDATE drivers SET password=%s WHERE id=%s", (generate_password_hash(password), driver["id"]), commit=True)
         session.clear()
         session["driver_id"] = driver["id"]
         session["driver_name"] = driver["name"]

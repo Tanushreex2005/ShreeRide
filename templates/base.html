@@ -54,7 +54,8 @@
 {% endwith %}
 
 <main id="main-content">
-{% block content %}{% endblock %}
+{% block content %}{% endblock %}  <!-- This section contains the content for child templates -->
+<!-- block content means: any page extending base template will inject content here -->
 </main>
 
 <footer>
