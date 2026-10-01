@@ -57,8 +57,6 @@ DB_CONFIG = {
     "password": os.environ.get("MYSQL_PASSWORD"),
     "database": os.environ.get("MYSQL_DATABASE", "ridex_db"),
 }
-if not all([DB_CONFIG["user"], DB_CONFIG["password"]]):
-    raise RuntimeError("MYSQL_USER and MYSQL_PASSWORD must be set in the environment.")
 
 BOOKING_START_SQL = "TIMESTAMP(pickup_date, pickup_time)"
 BOOKING_END_SQL = f"DATE_ADD({BOOKING_START_SQL}, INTERVAL duration_days DAY)"
@@ -103,6 +101,10 @@ def booking_window(today: date | None = None):
 
 
 def get_db():
+    if not all([DB_CONFIG["user"], DB_CONFIG["password"]]):
+        raise RuntimeError(
+            "MYSQL_USER and MYSQL_PASSWORD must be set in the environment."
+        )
     return mysql.connector.connect(**DB_CONFIG)
 
 
