@@ -1,0 +1,35 @@
+﻿services:
+  - type: web
+    name: shreeride-vfx
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MYSQL_HOST
+        fromDatabase:
+          name: shreeride-db
+          property: host
+      - key: MYSQL_USER
+        fromDatabase:
+          name: shreeride-db
+          property: username
+      - key: MYSQL_PASSWORD
+        fromDatabase:
+          name: shreeride-db
+          property: password
+      - key: MYSQL_DATABASE
+        fromDatabase:
+          name: shreeride-db
+          property: databaseName
+
+databases:
+  - name: shreeride-db
+    plan: starter
+    databaseName: ridex_db
+    user: shreeride
