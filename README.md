@@ -1,6 +1,6 @@
 # ShreeRide - Advance Car Booking System
 
-Flask + PostgreSQL car rental web app for Render, with the original MySQL setup preserved.
+Flask + MySQL car rental web app with customer, driver, and admin workflows.
 Search and filter cars, book by date/time period, generate invoices, assign
 drivers, and manage fleet.
 
@@ -34,16 +34,14 @@ Python 3.12 | Flask 3.1 | MySQL 8.0 | Private repo | MIT License
 
 ## Tech Stack
 
-- Backend: Python 3.12, Flask 3.1, Werkzeug, psycopg2-binary for Render PostgreSQL
+- Backend: Python 3.12, Flask 3.1, Werkzeug, mysql-connector-python
 - Frontend: Jinja2, HTML/CSS, Google Places autocomplete (optional)
 - Config: python-dotenv + .env, session cookies HttpOnly SameSite=Lax
 
 ## Project Structure
 
 - app.py : routes, auth, booking logic, validation
-- database_postgres.sql : Render PostgreSQL schema and starter data
-- init_postgres.py : initializes an empty Render database before deploy
-- database.sql : preserved MySQL schema and seed
+- database.sql : MySQL schema and starter data
   (admin, 6 drivers, 12 cars, all indexes, Electric/MPV included)
 - static/style.css + templates/ (12 pages) : UI
 - requirements.txt, .env.example, .gitignore, LICENSE
@@ -66,12 +64,6 @@ Python 3.12 | Flask 3.1 | MySQL 8.0 | Private repo | MIT License
 
 No migrations folder - database.sql already contains all tables,
 indexes, drivers, and latest cars.
-
-## Render PostgreSQL
-
-The root `render.yaml` Blueprint provisions Render PostgreSQL, initializes it from `database_postgres.sql`, and starts `app.py` with Gunicorn. Render supplies `DATABASE_URL` and generates `SECRET_KEY`. The original MySQL schema remains available, with its optional Blueprint in `render-mysql.yaml`.
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment steps and demo-account details.
 
 ## Env Example
 
@@ -116,4 +108,4 @@ See CONTRIBUTING.md. Use feature branches + PRs to main.
 ## License
 
 MIT - see LICENSE. Author Tanushree.
-Built with Flask + PostgreSQL for Render. Private repo.
+Built with Flask + MySQL. Private repo.
