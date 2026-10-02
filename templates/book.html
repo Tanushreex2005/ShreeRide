@@ -90,13 +90,7 @@ endblock %} {% block content %}
                 {% for n in range(1, 31) %}
                 <option
                   value="{{ n }}"
-                  {%
-                  if
-                  prefill_duration=""
-                  ="n"
-                  %}selected{%
-                  endif
-                  %}
+                  {% if prefill_duration == n %}selected{% endif %}
                 >
                   {{ n }} day{% if n > 1 %}s{% endif %}
                 </option>
